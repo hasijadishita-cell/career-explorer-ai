@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import AppHeader from "@/components/AppHeader";
+import AssessmentTrendChart from "@/components/AssessmentTrendChart";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { ArrowRight, Bookmark, Trash, Sparkle } from "@phosphor-icons/react";
@@ -12,6 +13,7 @@ export default function DashboardPage() {
   const nav = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [saved, setSaved] = useState([]);
+  const [trends, setTrends] = useState(null);
   const [busy, setBusy] = useState(true);
 
   useEffect(() => {
@@ -22,12 +24,14 @@ export default function DashboardPage() {
     if (!user) return;
     (async () => {
       try {
-        const [a, s] = await Promise.all([
+        const [a, s, t] = await Promise.all([
           api.get("/assessments"),
           api.get("/saved-careers"),
+          api.get("/assessments/trends"),
         ]);
         setAssessments(a.data);
         setSaved(s.data);
+        setTrends(t.data);
       } catch (e) {
         toast.error("Failed to load dashboard");
       } finally {
@@ -90,7 +94,13 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="assessments-list">
+            <>
+              {trends && trends.points && trends.points.length > 0 && (
+                <div className="mt-5">
+                  <AssessmentTrendChart data={trends} />
+                </div>
+              )}
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="assessments-list">
               {assessments.map((a) => (
                 <div key={a.id} className="ce-card p-5" data-testid={`assessment-${a.id}`}>
                   <div className="text-xs font-bold tracking-[0.18em] uppercase" style={{ color: "var(--accent)" }}>
@@ -112,6 +122,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+            </>
           )}
         </section>
 

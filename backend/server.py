@@ -162,8 +162,39 @@ async def forgot(payload: ForgotIn):
             "created_at": _now(),
             "used": False,
         })
-        log.info("PASSWORD RESET TOKEN for %s: %s", email, token)
+        reset_link = f"{os.environ.get('APP_PUBLIC_URL', '')}/reset-password?token={token}"
+        log.info("PASSWORD RESET TOKEN for %s: %s (link: %s)", email, token, reset_link)
+        await _send_reset_email(email, user.get("name", ""), reset_link)
     return {"ok": True, "message": "If that email exists, a reset link has been sent."}
+
+
+async def _send_reset_email(to_email: str, name: str, link: str):
+    api_key = os.environ.get("RESEND_API_KEY")
+    if not api_key:
+        log.warning("RESEND_API_KEY not set — skipping email send. Link: %s", link)
+        return
+    try:
+        import resend
+        resend.api_key = api_key
+        from_addr = os.environ.get("RESEND_FROM", "onboarding@resend.dev")
+        html = f"""
+        <div style="font-family:Manrope,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px;color:#0a0a0a">
+          <h1 style="font-size:24px;font-weight:900;letter-spacing:-0.02em;margin:0 0 16px">Reset your password</h1>
+          <p style="font-size:16px;line-height:1.6;color:#52525b">Hi {name or 'there'}, click the button below to reset your Career Explorer AI password. This link expires in 1 hour.</p>
+          <p style="margin:28px 0"><a href="{link}" style="background:#0038FF;color:#fff;text-decoration:none;font-weight:700;padding:14px 24px;border-radius:999px;display:inline-block">Reset password</a></p>
+          <p style="font-size:13px;color:#52525b">If you didn't request this, you can ignore this email.</p>
+          <p style="font-size:12px;color:#a1a1aa;margin-top:32px">Career Explorer AI</p>
+        </div>
+        """
+        resend.Emails.send({
+            "from": from_addr,
+            "to": [to_email],
+            "subject": "Reset your Career Explorer AI password",
+            "html": html,
+        })
+        log.info("Reset email sent to %s", to_email)
+    except Exception as e:
+        log.exception("Failed to send reset email: %s", e)
 
 
 @api.post("/auth/reset-password")
@@ -233,6 +264,33 @@ async def delete_assessment(assessment_id: str, user: dict = Depends(get_current
     if res.deleted_count == 0:
         raise HTTPException(404, "Not found")
     return {"ok": True}
+
+
+@api.get("/assessments/trends")
+async def assessment_trends(user: dict = Depends(get_current_user)):
+    """Return time-series of match% per career across the user's assessments.
+    Each datapoint: { date, <careerName>: match%, ... }. Includes the top 5 unique
+    careers across all attempts so chart stays readable."""
+    docs = await db.assessments.find(
+        {"user_id": user["id"]}, {"_id": 0}
+    ).sort("created_at", 1).to_list(100)
+
+    # collect unique career names from each assessment's top3
+    counts = {}
+    for d in docs:
+        for c in d.get("top3", []):
+            counts[c.get("name")] = counts.get(c.get("name"), 0) + 1
+    top_names = [n for n, _ in sorted(counts.items(), key=lambda x: -x[1]) if n][:5]
+
+    points = []
+    for d in docs:
+        row = {"date": (d.get("created_at") or "")[:10], "id": d.get("id")}
+        match_map = {c.get("name"): c.get("match", 0) for c in d.get("top3", [])}
+        for n in top_names:
+            row[n] = match_map.get(n, 0)
+        points.append(row)
+
+    return {"careers": top_names, "points": points, "count": len(docs)}
 
 
 # ----- SAVED CAREERS -----

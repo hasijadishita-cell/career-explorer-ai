@@ -6,7 +6,7 @@ import LandingPage from "@/pages/LandingPage";
 import AssessmentPage from "@/pages/AssessmentPage";
 import RatingPage from "@/pages/RatingPage";
 import ResultsPage from "@/pages/ResultsPage";
-import { LoginPage, SignupPage, ForgotPasswordPage } from "@/pages/AuthPages";
+import { LoginPage, SignupPage, ForgotPasswordPage, ResetPasswordPage } from "@/pages/AuthPages";
 import DashboardPage from "@/pages/DashboardPage";
 import AdminPage from "@/pages/AdminPage";
 import CareerDetailPage from "@/pages/CareerDetailPage";
@@ -26,6 +26,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/career/:slug" element={<CareerDetailPage />} />

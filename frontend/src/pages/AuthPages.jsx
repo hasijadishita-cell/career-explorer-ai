@@ -105,7 +105,7 @@ export function LoginPage() {
       sub="Sign in to view your past results and save careers."
       footer={
         <>
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link to="/signup" className="font-bold underline decoration-2 underline-offset-4" style={{ color: "var(--accent)" }} data-testid="signup-link">
             Create one
           </Link>
@@ -222,10 +222,10 @@ export function ForgotPasswordPage() {
       {sent ? (
         <div className="ce-card p-6" data-testid="forgot-sent">
           <p className="font-medium">
-            If that email exists in our system, we've sent a reset link.
+            If that email exists in our system, we&apos;ve sent a reset link.
           </p>
           <p className="text-sm mt-2" style={{ color: "var(--text-2)" }}>
-            (Reset token is logged to the backend console in this demo.)
+            Check your inbox (and the backend console as a demo fallback).
           </p>
           <Link to="/login" className="inline-block mt-5 font-bold" style={{ color: "var(--accent)" }}>
             Back to sign in →
@@ -245,6 +245,48 @@ export function ForgotPasswordPage() {
           </button>
         </form>
       )}
+    </AuthShell>
+  );
+}
+
+export function ResetPasswordPage() {
+  const nav = useNavigate();
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token") || "";
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!token) { toast.error("Missing reset token"); return; }
+    setLoading(true);
+    try {
+      const { api } = await import("@/lib/api");
+      await api.post("/auth/reset-password", { token, password });
+      toast.success("Password reset — please sign in");
+      nav("/login");
+    } catch (e) {
+      toast.error("Reset failed — token may be invalid or used");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthShell title="Set a new password" sub="Choose a strong password you'll remember.">
+      <form onSubmit={submit} className="space-y-4" data-testid="reset-form">
+        <Field icon={<Lock size={18} />} type="password" minLength={6} required placeholder="New password" data-testid="reset-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <button
+          type="submit"
+          disabled={loading || !token}
+          data-testid="reset-submit"
+          className="w-full h-12 rounded-full font-bold text-white"
+          style={{ background: "var(--accent)", boxShadow: "4px 4px 0 0 #0a0a0a", opacity: loading ? 0.7 : 1 }}
+        >
+          {loading ? "Resetting..." : "Reset password"}
+        </button>
+        {!token && <p className="text-sm" style={{ color: "var(--text-2)" }}>Open the reset link from your email to continue.</p>}
+      </form>
     </AuthShell>
   );
 }
