@@ -31,6 +31,9 @@ export default function ResultsPage() {
   const [savedSet, setSavedSet] = useState(new Set());
   const [aiText, setAiText] = useState(null);
   const [aiBusy, setAiBusy] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   // Fetch detail for top 3 from backend (country-aware salary etc)
   useEffect(() => {
@@ -81,42 +84,128 @@ export default function ResultsPage() {
     }
   };
 
+  const captureCanvas = async () => {
+    if (!shareRef.current) throw new Error("Result section not found");
+    // Ensure web fonts are loaded so capture isn't blank/Times-fallback
+    if (document?.fonts?.ready) {
+      try { await document.fonts.ready; } catch (e) { /* ignore */ }
+    }
+    // Small delay to allow any pending layout
+    await new Promise((r) => setTimeout(r, 60));
+    return await html2canvas(shareRef.current, {
+      backgroundColor: "#fdfdfd",
+      scale: window.devicePixelRatio > 1 ? 2 : 1.5,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      windowWidth: shareRef.current.scrollWidth,
+      windowHeight: shareRef.current.scrollHeight,
+    });
+  };
+
   const handleDownloadImage = async () => {
-    if (!shareRef.current) return;
+    setDownloading(true);
     try {
-      const canvas = await html2canvas(shareRef.current, { backgroundColor: "#fdfdfd", scale: 2, useCORS: true });
+      const canvas = await captureCanvas();
+      const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
-      link.download = `career-explorer-${Date.now()}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = "career-explorer-results.png";
+      link.href = dataUrl;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       toast.success("Image downloaded");
-    } catch {
-      toast.error("Image generation failed");
+    } catch (e) {
+      console.error("[Image export] failed:", e);
+      toast.error(`Image export failed: ${e.message || e}`);
+    } finally {
+      setDownloading(false);
     }
   };
 
   const handleDownloadPDF = async () => {
-    if (!shareRef.current) return;
+    setDownloadingPdf(true);
     try {
-      const canvas = await html2canvas(shareRef.current, { backgroundColor: "#fdfdfd", scale: 2, useCORS: true });
+      const canvas = await captureCanvas();
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ unit: "px", format: [canvas.width, canvas.height], orientation: "p" });
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-      pdf.save(`career-explorer-${Date.now()}.pdf`);
+      // Fit canvas into A4 portrait, preserve aspect
+      const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "p" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const ratio = canvas.height / canvas.width;
+      const imgW = pageW - 24; // 12pt margin each side
+      const imgH = imgW * ratio;
+      let y = 12;
+      if (imgH <= pageH - 24) {
+        pdf.addImage(imgData, "PNG", 12, y, imgW, imgH);
+      } else {
+        // Slice across multiple pages
+        const sliceH = (pageH - 24) / imgW * canvas.width;
+        let remaining = canvas.height;
+        let srcY = 0;
+        const tmpCanvas = document.createElement("canvas");
+        const ctx = tmpCanvas.getContext("2d");
+        tmpCanvas.width = canvas.width;
+        while (remaining > 0) {
+          const slice = Math.min(sliceH, remaining);
+          tmpCanvas.height = slice;
+          ctx.clearRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+          ctx.drawImage(canvas, 0, srcY, canvas.width, slice, 0, 0, canvas.width, slice);
+          const sliceData = tmpCanvas.toDataURL("image/png");
+          const sliceImgH = (slice / canvas.width) * imgW;
+          pdf.addImage(sliceData, "PNG", 12, 12, imgW, sliceImgH);
+          remaining -= slice;
+          srcY += slice;
+          if (remaining > 0) pdf.addPage();
+        }
+      }
+      pdf.save("career-explorer-results.pdf");
       toast.success("PDF downloaded");
-    } catch {
-      toast.error("PDF generation failed");
+    } catch (e) {
+      console.error("[PDF export] failed:", e);
+      toast.error(`PDF export failed: ${e.message || e}`);
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
   const handleShare = async () => {
-    const text = `My top career match is ${top3[0].name} (${top3[0].match}% match) on Career Explorer AI.`;
-    const url = window.location.origin;
-    if (navigator.share) {
-      try { await navigator.share({ title: "Career Explorer AI", text, url }); } catch { /* dismissed */ }
-    } else {
-      try { await navigator.clipboard.writeText(`${text} ${url}`); toast.success("Copied to clipboard"); }
-      catch { toast.error("Copy failed"); }
+    setSharing(true);
+    const shareText = `My top career match is ${top3[0]?.name} (${top3[0]?.match}% match) on Career Explorer AI.`;
+    const shareUrl = window.location.origin;
+    const payload = `${shareText} ${shareUrl}`;
+    try {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Career Explorer AI", text: shareText, url: shareUrl });
+          toast.success("Shared");
+          return;
+        } catch (err) {
+          if (err?.name === "AbortError") return; // user cancelled
+          console.warn("[Share] navigator.share failed, falling back:", err);
+        }
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(payload);
+        toast.success("Result copied to clipboard");
+        return;
+      }
+      // Last-resort fallback: textarea copy
+      const ta = document.createElement("textarea");
+      ta.value = payload;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (ok) toast.success("Result copied to clipboard");
+      else throw new Error("Clipboard unavailable");
+    } catch (e) {
+      console.error("[Share] failed:", e);
+      toast.error(`Share failed: ${e.message || e}`);
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -164,14 +253,14 @@ export default function ResultsPage() {
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3" data-testid="results-actions">
-            <button onClick={handleDownloadImage} data-testid="download-image-button" className="inline-flex items-center gap-2 px-4 h-11 rounded-full font-semibold text-white" style={{ background: "var(--accent)", boxShadow: "4px 4px 0 0 #0a0a0a" }}>
-              <Download size={18} weight="bold" /> Image
+            <button onClick={handleDownloadImage} disabled={downloading} data-testid="download-image-button" className="inline-flex items-center gap-2 px-4 h-11 rounded-full font-semibold text-white" style={{ background: "var(--accent)", boxShadow: "4px 4px 0 0 #0a0a0a", opacity: downloading ? 0.7 : 1 }}>
+              <Download size={18} weight="bold" /> {downloading ? "Generating..." : "Image"}
             </button>
-            <button onClick={handleDownloadPDF} data-testid="download-pdf-button" className="inline-flex items-center gap-2 px-4 h-11 rounded-full font-semibold border border-[var(--border)] hover:border-[var(--text)]">
-              <Download size={18} weight="bold" /> PDF
+            <button onClick={handleDownloadPDF} disabled={downloadingPdf} data-testid="download-pdf-button" className="inline-flex items-center gap-2 px-4 h-11 rounded-full font-semibold border border-[var(--border)] hover:border-[var(--text)]" style={{ opacity: downloadingPdf ? 0.6 : 1 }}>
+              <Download size={18} weight="bold" /> {downloadingPdf ? "Generating..." : "PDF"}
             </button>
-            <button onClick={handleShare} data-testid="share-button" className="inline-flex items-center gap-2 px-4 h-11 rounded-full font-semibold border border-[var(--border)] hover:border-[var(--text)]">
-              <ShareNetwork size={18} weight="bold" /> Share
+            <button onClick={handleShare} disabled={sharing} data-testid="share-button" className="inline-flex items-center gap-2 px-4 h-11 rounded-full font-semibold border border-[var(--border)] hover:border-[var(--text)]" style={{ opacity: sharing ? 0.6 : 1 }}>
+              <ShareNetwork size={18} weight="bold" /> {sharing ? "Sharing..." : "Share"}
             </button>
             <button onClick={handleAiExplain} disabled={aiBusy} data-testid="ai-explain-button" className="inline-flex items-center gap-2 px-4 h-11 rounded-full font-semibold border" style={{ borderColor: "var(--accent)", color: "var(--accent)" }}>
               <Robot size={18} weight="bold" /> {aiBusy ? "Generating..." : "AI explanation"}
