@@ -1,0 +1,33 @@
+{
+  "summary": "Career Explorer V2 first-finish smoke test — all backend API contracts (countries, careers list/detail with country multipliers, auth full flow incl. forgot/reset, assessments CRUD, saved-careers idempotent, admin/stats RBAC, AI explain via Claude Sonnet 4.5) verified end-to-end against the public URL. Frontend smoke covered landing, signup -> dashboard, authed header (logout + country-select), empty-state, career detail with 3-stage roadmap, /admin RBAC redirect for non-admin, and admin dashboard counters + top careers for admin login. Everything is green.",
+  "tested_scope": ["backend", "frontend", "auth", "integration"],
+  "passed": [
+    "GET /api/countries -> 200, 5 countries with code/label/currency/symbol/mult",
+    "GET /api/careers?country=IN -> 5 careers, symbol ₹, salary scaled by 38x (e.g. 2,660,000 – 6,080,000)",
+    "GET /api/careers/Software%20Engineer?country=UK -> full detail, salary in £ (£49,000 – £112,000), roadmap has beginner/intermediate/advanced",
+    "POST /api/auth/register -> 200 {token,user}; GET /api/auth/me with Bearer -> 200 (no password_hash); /me without token -> 401",
+    "Duplicate register -> 409; wrong password login -> 401; correct login -> 200",
+    "PATCH /api/auth/country {country:'IN'} -> 200 {country:'IN'}",
+    "POST /api/auth/logout -> 200 {ok:true}",
+    "POST /api/auth/forgot-password -> 200 {ok:true}; reset token logged in /var/log/supervisor/backend.err.log",
+    "POST /api/auth/reset-password (uses field name 'password') -> 200; subsequent login with new password -> 200",
+    "Assessments: POST -> 200 id; GET -> list of 1; DELETE -> 200; unauthenticated GET -> 401",
+    "Saved careers: POST -> 200, second POST idempotent -> 200, GET list -> 1, DELETE -> 200",
+    "Admin login (admin@careerexplorer.ai / Admin@2026!) -> 200; GET /api/admin/stats -> 200 with total_users/total_assessments/total_saved/top_careers/top_saved; non-admin -> 403",
+    "POST /api/ai/explain (Claude Sonnet 4.5 via emergentintegrations) -> 200 with non-empty explanation; unauth -> 401",
+    "FRONTEND landing shows header-signup + header-login",
+    "FRONTEND signup form (signup-name/email/password/country/submit) signs in user and redirects to /dashboard; header now shows logout-button + country-select",
+    "FRONTEND dashboard shows no-assessments empty state for a fresh user",
+    "FRONTEND /career/Software%20Engineer renders career-name + roadmap-beginner/intermediate/advanced",
+    "FRONTEND /admin redirects non-admin to / (admin-title not rendered)",
+    "FRONTEND admin login renders admin-title + counter-users + counter-assessments + counter-saved-careers"
+  ],
+  "failed": [],
+  "minor_notes": [
+    "Reset-password endpoint expects JSON field 'password' (not 'new_password'); worked correctly with 'password'. Frontend ResetPasswordPage already uses 'password' so this is fine, but worth documenting."
+  ],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true
+}
