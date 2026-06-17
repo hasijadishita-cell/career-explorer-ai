@@ -1,0 +1,29 @@
+{
+  "summary": "Comprehensive frontend smoke test of Career Explorer AI SPA. All critical flows verified end-to-end: landing → 9-question assessment → 10-career rating → top-3 results, plus persistence, navigation guards, back navigation, and scoring correctness.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "Landing page loads with start-assessment-button",
+    "Clicking Start navigates to /assessment and shows 'Q1/9'",
+    "Q1 option selection enables next-button; progress counter '01 / 09' displays",
+    "Completed all 9 questions and navigated to /rate",
+    "/rate displays exactly 10 career rows with kebab-case star testids",
+    "Star toggle clears rating (clicking same star twice); submit re-disabled until all rated",
+    "Rating counter shows '10 / 10 rated' after rating all",
+    "Submit navigates to /results",
+    "Top match name/percent/description/skills (5)/why all present; #1 = Software Engineer @ 84% (scoring logic correct)",
+    "secondary-match-2, secondary-match-3 and other-career-4..10 all rendered",
+    "Download button click triggers html2canvas with no JS errors",
+    "Share button clickable without error",
+    "view-last-result-link appears on landing after completing rating",
+    "Direct /rate without quiz redirects to /assessment",
+    "Direct /results without rating redirects to /",
+    "Back-button preserves prior answer with data-selected=true on option card",
+    "localStorage persists currentStep and answers across reload (returned to Q2 with selection intact)"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "100% (18/18 checks)"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Scoring verified: SE-aligned answers (q2=salary, q3=building, q4=tech, q5=google, q6=systems, q7=app, q8=technical, q9=se) correctly produced Software Engineer as #1 on rating page (top of top-10) and as the top match on results page (84% after 5-star rating). No backend interactions in app; backend testing skipped as instructed."
+}
