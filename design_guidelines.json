@@ -1,0 +1,105 @@
+{
+  "app_name": "Career Explorer AI",
+  "theme": "Light",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "vibe": "Minimal monochrome with one bold accent color. Premium, encouraging, and highly intentional. It should feel like a high-end editorial assessment rather than a generic template quiz.",
+  "colors": {
+    "background": "#FDFDFD",
+    "surface": "#FFFFFF",
+    "surface_secondary": "#F4F4F5",
+    "text_primary": "#0A0A0A",
+    "text_secondary": "#52525B",
+    "accent_primary": "#0038FF",
+    "accent_hover": "#002ED0",
+    "accent_muted": "rgba(0, 56, 255, 0.08)",
+    "border_subtle": "#E4E4E7",
+    "border_active": "#0038FF"
+  },
+  "typography": {
+    "font_primary": "Cabinet Grotesk",
+    "font_secondary": "Manrope",
+    "h1": "text-5xl md:text-6xl font-black tracking-tighter text-text_primary leading-tight",
+    "h2": "text-3xl md:text-4xl font-extrabold tracking-tight text-text_primary",
+    "h3": "text-2xl font-bold tracking-tight text-text_primary",
+    "body_large": "text-lg md:text-xl font-medium font-secondary text-text_secondary leading-relaxed",
+    "body": "text-base font-normal font-secondary text-text_secondary leading-relaxed",
+    "overline": "text-xs font-bold tracking-[0.2em] uppercase text-accent_primary",
+    "forbidden_fonts": ["Inter", "Roboto", "Open Sans", "Lato", "Syne"]
+  },
+  "spacing_and_layout": {
+    "global_padding": "p-6 md:p-12 lg:p-24",
+    "container": "max-w-7xl mx-auto",
+    "border_radius": "rounded-2xl",
+    "bento_grid": "grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8",
+    "surface_style": "Flat with sharp 1px borders (border-border_subtle). No soft dropshadows. High contrast 'neobrutalism-lite' approach.",
+    "alignment": "Left-aligned for all reading content and forms. Center alignment ONLY for the final success message or empty states."
+  },
+  "motion": {
+    "page_transitions": "Smooth fade in and slight slide up (Framer Motion).",
+    "hover_states": "Interactive cards should translate-y by -4px, borders change to accent_primary, and apply a hard, unblurred drop-shadow (e.g., shadow-[4px_4px_0px_#0038FF]).",
+    "progress_bar": "Animated width expansion with a sleek spring transition."
+  },
+  "iconography": {
+    "library": "@phosphor-icons/react",
+    "style": "Duotone or Regular weight. Sharp, legible.",
+    "installation": "yarn add @phosphor-icons/react lucide-react"
+  },
+  "components_strategy": {
+    "buttons": "Shadcn based. Primary buttons must be solid accent_primary with white text. Generous padding (h-14, px-8).",
+    "cards": "Custom built using HTML/Tailwind for max flexibility. Use 1px borders. Add internal padding p-6 or p-8.",
+    "progress_tracker": "A fixed top or floating pill progress bar showing 'Question X of Y' and a visual percentage fill in accent_primary.",
+    "star_rating": "Use Phosphor Icons (Star). Inactive: text-border_subtle. Active: text-accent_primary (Cobalt Blue). Add scale animation on click."
+  },
+  "pages": {
+    "landing_page": {
+      "layout": "Asymmetrical split. Left side: Massive H1, minimal subheading, large primary CTA. Right side: Hero imagery overlapping a geometric shape.",
+      "visuals": "Apply a subtle grayscale to photos and use the accent_primary as a duotone or geometric overlay for a highly branded look."
+    },
+    "assessment_flow": {
+      "layout": "One question per screen. Max-w-2xl centered column.",
+      "header": "Minimal. Back button on the top left. Progress text/bar on the top right.",
+      "question": "Large H2 (text-3xl+). Left aligned.",
+      "options": "Vertical stack of large, tappable cards (min-h-[80px]). No radio dots necessary; the entire card is the selection area. On select, highlight border and background with accent_muted.",
+      "navigation": "Sticky bottom bar or inline 'Next' button appearing/activating only after selection."
+    },
+    "career_rating_page": {
+      "layout": "List view. 10 items. Clean rows.",
+      "item_structure": "Flex container. Left: Career Title + 1 sentence context. Right: 5-star rating component.",
+      "instructions": "Make it feel like a professional review tool, not a generic survey."
+    },
+    "results_page": {
+      "layout": "Grid layout. The #1 matched career spans full width (hero result). #2 and #3 sit side-by-side below.",
+      "top_match_card": "Premium feel. Massive match percentage typography (e.g., '98% Match' in text-6xl). Includes Category, Description, Key Skills tags, and 'Why it matches'.",
+      "share_feature": "A prominent 'Share Result' or 'Download as Image' button (using a library like html2canvas) styled distinctively.",
+      "persistence": "Load the last result from localStorage if the user re-visits."
+    }
+  },
+  "testing": {
+    "mandate": "ALL interactive elements MUST include a 'data-testid' attribute in kebab-case format. E.g., data-testid='start-assessment-button', data-testid='option-card-1', data-testid='next-question-button'."
+  },
+  "image_urls": [
+    {
+      "category": "landing_page_hero",
+      "url": "https://images.unsplash.com/photo-1565598621680-94ac0c22b148?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwzfHxzdHVkZW50JTIwcHJvZmVzc2lvbmFsJTIwd29ya2luZyUyMG1vZGVybnxlbnwwfHx8fDE3ODE2ODQwNjR8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Woman using MacBook, professional and modern. Recommendation: Apply CSS grayscale and use alongside blue accents."
+    },
+    {
+      "category": "abstract_career_success",
+      "url": "https://images.unsplash.com/photo-1658474598480-74daa87936af?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxNzV8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMGNhcmVlciUyMHBhdGglMjBzdWNjZXNzfGVufDB8fHx8MTc4MTY4NDA2NHww&ixlib=rb-4.1.0&q=85",
+      "description": "Minimalist white staircase rising. Perfect for background elements or the rating page header."
+    },
+    {
+      "category": "career_card_placeholder",
+      "url": "https://images.unsplash.com/photo-1514369118554-e20d93546b30?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwyfHxzdHVkZW50JTIwcHJvZmVzc2lvbmFsJTIwd29ya2luZyUyMG1vZGVybnxlbnwwfHx8fDE3ODE2ODQwNjR8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Professional writing/working. Can be used to anchor the top matched career result."
+    }
+  ],
+  "instructions_to_main_agent": [
+    "Do NOT use standard Shadcn cards for the main marketing/landing pages. Use pure HTML/Tailwind with generous spacing.",
+    "Implement the assessment logic strictly with React state, passing data between steps. Persist final results to localStorage.",
+    "Ensure 'html-to-image' or 'html2canvas' is installed and implemented for the Share/Download Results requirement.",
+    "Apply Framer Motion layout transitions between question changes to make the one-question-per-screen UX feel incredibly smooth.",
+    "Strictly follow the color palette. No gradients unless it's a subtle background mesh. Rely on the bold Cobalt Blue for all primary actions.",
+    "Remember to include 'data-testid' on all buttons, assessment choices, and navigation elements."
+  ]
+}
